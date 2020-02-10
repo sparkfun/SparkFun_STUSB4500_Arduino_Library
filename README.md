@@ -1,15 +1,13 @@
-SparkFun MediaTek I2C Interface Library
+SparkFun STUSB4500 I2C Interface Library
 ===========================================================
 
-![SparkFun GPS Breakout - XA1110 (Qwiic)](https://cdn.sparkfun.com/r/500-500/assets/parts/1/2/3/4/0/14414-02.jpg)
+![SparkFun Power Belivery Board - USB-C (Qwiic)](https://cdn.sparkfun.com//assets/parts/1/4/4/1/4/15801-SparkFun_Power_Delivery_Board_-_USB-C__Qwiic_-01.jpg)
 
-[*SparkFun GPS Breakout - XA1110 (Qwiic) (SEN-14414)*](https://www.sparkfun.com/products/14414)
+[*SparkFun Power Belivery Board - USB-C (Qwiic) (DEV-15801)*](https://www.sparkfun.com/products/15801)
 
-The Qwiic GPS uses the Titan X1 GPS module with special I2C firmware. This library talks to the GPS module over I2C.
+The Power Delivery Board uses the STUSB4500 power delivery controller which can be configured over I2C. This library talks to the controller to configure a USB Type-C power delivery adapter to switch the voltage from 5V up to 20V and 5A of current.
 
-We recommend using the [TinyGPS++ library](https://github.com/mikalhart/TinyGPSPlus) in addition to this library. Works like a champ together.
-
-Library written by Nathan Seidle ([SparkFun](http://www.sparkfun.com)).
+Library written by Alex Wende ([SparkFun](http://www.sparkfun.com)).
 
 Repository Contents
 -------------------
@@ -23,7 +21,7 @@ Documentation
 --------------
 
 * **[Installing an Arduino Library Guide](https://learn.sparkfun.com/tutorials/installing-an-arduino-library)** - Basic information on how to install an Arduino library.
-* **[Product Repository](https://github.com/sparkfunx/Qwiic_GPS-TitanX1)** - Main repository (including hardware files) for the Titan X1 Qwiic breakout board.
+* **[Product Repository](https://github.com/sparkfun/Power_Delivery_Board-USB-C)** - Main repository (including hardware files) for the Power Delivery board.
 
 License Information
 -------------------

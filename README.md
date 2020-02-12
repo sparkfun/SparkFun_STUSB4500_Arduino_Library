@@ -22,6 +22,7 @@ Documentation
 
 * **[Installing an Arduino Library Guide](https://learn.sparkfun.com/tutorials/installing-an-arduino-library)** - Basic information on how to install an Arduino library.
 * **[Product Repository](https://github.com/sparkfun/Power_Delivery_Board-USB-C)** - Main repository (including hardware files) for the Power Delivery board.
+* **[Power Delivery Board Hookup Guide](https://learn.sparkfun.com/tutorials/power-delivery-board---usb-c-qwiic-hookup-guide)** - Hookup Guide for the Power Delivery Board. 
 
 License Information
 -------------------

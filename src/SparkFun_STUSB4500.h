@@ -1,11 +1,9 @@
 /*
-  This is a library written for the STUSB4500 power delivery controller.
-  SparkFun sells these at its website: www.sparkfun.com
+  This is a library written for the STUSB4500 Power Delivery Board.
+  SparkFun sells these at its website: https://www.sparkfun.com
   
-  The write and read functions were based on the NVM_Flasher code for
-  the STUSB4500 which can be found here:
-  
-  https://github.com/usb-c/STUSB4500
+  The functions were based on the NVM_Flasher code for
+  the STUSB4500 which can be found here: https://github.com/usb-c/STUSB4500
 
   Written by Alex Wende @ SparkFun Electronics, February 6th, 2020
 
@@ -16,13 +14,8 @@
   Development environment specifics:
   Arduino IDE 1.8.6
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  For licence information see LICENSE.md
+  https://github.com/sparkfun/SparkFun_STUSB4500_Arduino_Library/blob/master/LICENSE.md
 */
 
 #ifndef SPARKFUN_STUSB4500_H

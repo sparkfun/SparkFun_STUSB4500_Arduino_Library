@@ -1,21 +1,46 @@
-#include<Wire.h>
-#include "SparkFun_STUSB4500.h"
+/*
+  Writing the Settings to the STUSB4500 Power Delivery Board
+  By: Alex Wende
+  SparkFun Electronics
+  Date: February 6th, 2020
+  License: This code is public domain but you buy me a beer if you use this and we meet someday (Beerware license).
+  Feel like supporting our work? Buy a board from SparkFun!
+  https://www.sparkfun.com/products/15801
+  
+  This example demonstrates how to change the NVM settings saved to the STUSB4500
+  
+  Quick-start:
+  - Use a SparkFun RedBoard Qwiic -or- attach the Qwiic Shield to your Arduino/Photon/ESP32 or other
+  - Uncomment and modify the variables of the functions you want to change
+  - Upload the sketch
+  - Plug the Power Delivery Board onto the RedBoard/shield
+  - Open the serial monitor and set the baud rate to 115200
+  - The RedBoard will connect to the Power Delivery Board over I2C and print out all of the settings saved.
+*/
+// Include the SparkFun STUSB4500 library.
+// Click here to get the library: http://librarymanager/All#SparkFun_STUSB4500
+
+#include <Wire.h>
+#include <SparkFun_STUSB4500.h>
 
 STUSB4500 usb;
 
-void setup()
+void setup() 
 {
   Serial.begin(115200);
   delay(500);
-
+  
+  /* The Power Delivery board uses the default settings with address 0x28 using Wire.
+  
+     Opionally, if the address jumpers are modified, or using a different I2C bus,
+     these parameters can be changed here. E.g. usb.begin(0x29,Wire1)
+  
+     It will return true on success or false on failure to communicate. */
   if(!usb.begin())
   {
     Serial.println("Cannot connect to STUSB4500.");
     Serial.println("Is the board connected? Is the device ID correct?");
-    while(!usb.begin())
-    {
-      delay(10);
-    }
+    while(1);
   }
   
   Serial.println("Connected to STUSB4500!");

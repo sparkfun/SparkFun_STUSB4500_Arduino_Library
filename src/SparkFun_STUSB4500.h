@@ -41,11 +41,6 @@ class STUSB4500 {
   uint8_t begin(uint8_t deviceAddress = 0x28, TwoWire &wirePort = Wire);
   
   /*
-    Prints the non-volatile memeory values over the UART
-  */
-  void printNVM(void);
-  
-  /*
     Reads the NVM memory from the STUSB4500
   */
   void read(void);

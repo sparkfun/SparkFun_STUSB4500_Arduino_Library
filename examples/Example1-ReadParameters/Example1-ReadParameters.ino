@@ -26,7 +26,9 @@ STUSB4500 usb;
 
 void setup() 
 {
-  Serial.begin(115200);
+  Serial.begin(115200);  
+  Wire.begin(); //Join I2C bus
+  
   delay(500);
   
   /* The Power Delivery board uses the default settings with address 0x28 using Wire.

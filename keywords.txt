@@ -15,7 +15,6 @@ STUSB4500	KEYWORD1
 #######################################
 
 begin	KEYWORD2
-printNVM	KEYWORD2
 read	KEYWORD2
 write	KEYWORD2
 getVoltage	KEYWORD2

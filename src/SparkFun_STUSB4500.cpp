@@ -29,13 +29,9 @@ uint8_t STUSB4500::begin(uint8_t deviceAddress, TwoWire &wirePort)
   _deviceAddress = deviceAddress; //If provided, store the I2C address from user
   _i2cPort = &wirePort; //Grab which port the user wants us to use
 
-  //We expect caller to begin their I2C port, with the speed of their choice external to the library
-  //But if they forget, we start the hardware here.
-  _i2cPort->begin();
-
   _i2cPort->beginTransmission(_deviceAddress);
 
-  byte error = _i2cPort->endTransmission();
+  uint8_t error = _i2cPort->endTransmission();
 
   if(error == 0)
   {
@@ -47,26 +43,6 @@ uint8_t STUSB4500::begin(uint8_t deviceAddress, TwoWire &wirePort)
 	return true; //Device online!
   }
   else return false;          //Device not attached?
-}
-
-void STUSB4500::printNVM(void)
-{
-  read();
-  
-  for(byte i=0;i<5;i++)
-  {
-    byte nvmBlock[] = {0xC0,0xC8,0xD0,0xD8,0xE0};
-    Serial.print("\n0x");
-    Serial.print(nvmBlock[i],HEX);
-    Serial.print(":");
-    for(byte j=0;j<8;j++)
-    {
-      Serial.print("\t0x");
-      if(sector[i][j]<0x10) Serial.print('0');
-      Serial.print(sector[i][j],HEX);
-    }
-  }
-  Serial.println();
 }
 
 void STUSB4500::read(void)
@@ -386,7 +362,7 @@ void STUSB4500::setPdoNumber(uint8_t value)
 {
   if(value > 3) value = 3;
   
-  //load PDO number (sector 3, byte2, bits 2:3)
+  //load PDO number (sector 3, byte 2, bits 2:3)
   sector[3][2] &= 0xF9;
   sector[3][2] |= (value<<1);
 }
@@ -568,7 +544,7 @@ uint8_t STUSB4500::I2C_Write_USB_PD(uint16_t Register ,uint8_t *DataW ,uint16_t 
   uint8_t error;
   _i2cPort->beginTransmission(_deviceAddress);
   _i2cPort->write(Register);
-  for(byte i=0;i<Length;i++)
+  for(uint8_t i=0;i<Length;i++)
   {
     _i2cPort->write(*(DataW+i));
   }

@@ -47,7 +47,7 @@ uint8_t STUSB4500::begin(uint8_t deviceAddress, TwoWire &wirePort)
 
 void STUSB4500::read(void)
 {
-  uint8_t Buffer[2];
+  uint8_t Buffer[1];
   readSectors = 1;
   //Read Current Parameters
   //-Enter Read Mode
@@ -123,49 +123,21 @@ void STUSB4500::write(uint8_t defaultVals)
 }
 
 float STUSB4500::getVoltage(uint8_t pdo_numb)
-{  
-  if(pdo_numb == 1) //PDO1
-  {
-	return 5;
-  }
-  else if(pdo_numb == 2) //PDO2
-  {
-	return sector[4][1]*0.2;
-  }
-  else //PDO3
-  {
-	return (((sector[4][3]&0x03)<<8) + sector[4][2])*0.05;
-  }
+{ 
+  uint32_t pdoData = readPDO(pdo_numb);
+
+  pdoData = (pdoData>>10)&0x3FF;
+
+  return pdoData * 0.05;
 }
 
 float STUSB4500::getCurrent(uint8_t pdo_numb)
 {
-  uint8_t digitalValue;
-  
-  if(pdo_numb == 1) //PDO1
-  {
-	digitalValue = (sector[3][2]&0xF0) >> 4;
-	
-    if(digitalValue == 0)      return 0;
-    else if(digitalValue < 11) return digitalValue * 0.25 + 0.25;
-    else                       return digitalValue * 0.50 - 2.50;
-  }
-  else if(pdo_numb == 2) //PDO2
-  {
-	digitalValue = (sector[3][4]&0x0F);
-	
-    if(digitalValue== 0)       return 0;
-    else if(digitalValue < 11) return digitalValue * 0.25 + 0.25;
-    else                       return digitalValue * 0.50 - 2.50;
-  }
-  else //PDO3
-  {
-	digitalValue = (sector[3][5]&0xF0) >> 4;
-	
-    if(digitalValue == 0)      return 0;
-    else if(digitalValue < 11) return digitalValue * 0.25 + 0.25;
-    else                       return digitalValue * 0.50 - 2.50;
-  }
+  uint32_t pdoData = readPDO(pdo_numb);
+
+  pdoData &= 0x3FF;
+
+  return pdoData * 0.01;
 }
 
 uint8_t STUSB4500::getLowerVoltageLimit(uint8_t pdo_numb)
@@ -208,7 +180,11 @@ float STUSB4500::getFlexCurrent(void)
 
 uint8_t STUSB4500::getPdoNumber(void)
 {
-  return (sector[3][2] & 0x06)>>1;
+  uint8_t Buffer[1];
+  I2C_Read_USB_PD(DPM_PDO_NUMB, Buffer, 1);
+
+  return Buffer[0]&0x07;
+  //return (sector[3][2] & 0x06)>>1;
 }
 
 uint8_t STUSB4500::getExternalPower(void)
@@ -243,12 +219,16 @@ uint8_t STUSB4500::getReqSrcCurrent(void)
 
 void STUSB4500::setVoltage(uint8_t pdo_numb, float voltage)
 {
+  if(pdo_numb < 1) pdo_numb = 1;
+  else if(pdo_numb > 3) pdo_numb = 3;
+
   //Constrain voltage variable to 5-20V
   if(voltage < 5) voltage = 5;
   else if(voltage > 20) voltage = 20;
   
   //PDO1 Fixed at 5V
   
+  //Load voltage to non-volatile memory
   if(pdo_numb == 2) //PDO2
   {
 	sector[4][1] = voltage/0.2; //load Voltage (sector 4, byte 1, bits 0:7)
@@ -263,6 +243,20 @@ void STUSB4500::setVoltage(uint8_t pdo_numb, float voltage)
     sector[4][3] &= 0xFC;               //clear bits 0:1
     sector[4][3] |= (setVoltage>>8);    //load bits 8:9
   }
+
+  // Load voltage to volatile PDO memory (PDO1 needs to remain at 5V)
+  if(pdo_numb != 1)
+  {
+    voltage /= 0.05;
+
+    //Replace voltage from bits 10:19 with new voltage
+    uint32_t pdoData = readPDO(pdo_numb);
+
+    pdoData &= ~(0xFFC00);
+    pdoData |= (uint32_t(voltage)<<10);
+
+    writePDO(pdo_numb, pdoData);
+  }
 }
 
 void STUSB4500::setCurrent(uint8_t pdo_numb, float current)
@@ -271,28 +265,39 @@ void STUSB4500::setCurrent(uint8_t pdo_numb, float current)
     -current from 0.5-3.0A is set in 0.25A steps
     -current from 3.0-5.0A is set in 0.50A steps
   */
-  if(current < 0.5)     current = 0;
-  else if(current <= 3) current = (4*current)-1;
-  else                  current = (2*current)+5;
+  uint8_t nvmCurrent;
+
+  if(current < 0.5)     nvmCurrent = 0;
+  else if(current <= 3) nvmCurrent = (4*current)-1;
+  else                  nvmCurrent = (2*current)+5;
   
   if(pdo_numb == 1) //PDO1
   {
 	//load current (sector 3, byte 2, bits 4:7)
     sector[3][2] &= 0x0F;             //clear bits 4:7
-    sector[3][2] |= ((int)current<<4);    //load new amperage for PDO1
+    sector[3][2] |= (nvmCurrent<<4);    //load new amperage for PDO1
   }
   else if(pdo_numb == 2) //PDO2
   {
 	//load current (sector 3, byte 4, bits 0:3)
     sector[3][4] &= 0xF0;             //clear bits 0:3
-    sector[3][4] |= (int)current;     //load new amperage for PDO2
+    sector[3][4] |= nvmCurrent;     //load new amperage for PDO2
   }
   else //PDO3
   {
 	//load current (sector 3, byte 5, bits 4:7)
     sector[3][5] &= 0x0F;           //clear bits 4:7
-    sector[3][5] |= ((int)current<<4);  //set amperage for PDO3
-  }  
+    sector[3][5] |= (nvmCurrent<<4);  //set amperage for PDO3
+  }
+
+  // Load current to volatile PDO memory
+  current /= 0.01;
+
+  uint32_t pdoData = readPDO(pdo_numb);
+  pdoData &= ~(0x3FF);
+  pdoData |= uint32_t(current);
+
+  writePDO(pdo_numb, pdoData);
 }
 
 void STUSB4500::setLowerVoltageLimit(uint8_t pdo_numb, uint8_t value)
@@ -360,9 +365,14 @@ void STUSB4500::setFlexCurrent(float value)
 
 void STUSB4500::setPdoNumber(uint8_t value)
 {
+  uint8_t Buffer[1];
   if(value > 3) value = 3;
+
+  //load PDO number to volatile memory
+  Buffer[0] = value;
+  I2C_Write_USB_PD(DPM_PDO_NUMB, Buffer,1);
   
-  //load PDO number (sector 3, byte 2, bits 2:3)
+  //load PDO number (sector 3, byte 2, bits 2:3) for NVM saving
   sector[3][2] &= 0xF9;
   sector[3][2] |= (value<<1);
 }
@@ -422,9 +432,47 @@ void STUSB4500::setReqSrcCurrent(uint8_t value)
   sector[4][6] |= (value<<4); //set bit 4
 }
 
+void STUSB4500::softReset( void )
+{
+  uint8_t Buffer[1];
+
+  //Soft Reset
+  Buffer[0] = 0x0D; //SOFT_RESET
+  I2C_Write_USB_PD(TX_HEADER_LOW, Buffer,1);
+
+  Buffer[0] = 0x26; //SEND_COMMAND
+  I2C_Write_USB_PD(PD_COMMAND_CTRL, Buffer,1);
+}
+
+uint32_t STUSB4500::readPDO(uint8_t pdo_numb)
+{
+  uint32_t pdoData;
+  uint8_t Buffer[4];
+
+  //PDO1:0x85, PDO2:0x89, PDO3:0x8D
+  I2C_Read_USB_PD(0x85 + ((pdo_numb-1)*4), Buffer, 4);
+
+  //Replace voltage from bits 10:19 with new voltage
+  pdoData = (Buffer[3]<<24) + (Buffer[2]<<16) + (Buffer[1]<<8) + Buffer[0];
+
+  return pdoData;
+}
+
+void STUSB4500::writePDO(uint8_t pdo_numb, uint32_t pdoData)
+{
+  uint8_t Buffer[4];
+
+  Buffer[0] = (pdoData)    & 0xFF;
+  Buffer[1] = (pdoData>>8) & 0xFF;
+  Buffer[2] = (pdoData>>16)& 0xFF;
+  Buffer[3] = (pdoData>>24)& 0xFF;
+
+  I2C_Write_USB_PD(0x85 + ((pdo_numb-1)*4), Buffer, 4);
+}
+
 uint8_t STUSB4500::CUST_EnterWriteMode(unsigned char ErasedSector)
 {
-  unsigned char Buffer[2];
+  uint8_t Buffer[1];
   
   
   Buffer[0]=FTP_CUST_PASSWORD;   /* Set Password*/
@@ -487,7 +535,7 @@ uint8_t STUSB4500::CUST_EnterWriteMode(unsigned char ErasedSector)
 
 uint8_t STUSB4500::CUST_ExitTestMode(void)
 {
-  unsigned char Buffer[2];
+  uint8_t Buffer[2];
   
   Buffer[0]= FTP_CUST_RST_N;
   Buffer[1]= 0x00;  /* clear registers */
@@ -501,7 +549,7 @@ uint8_t STUSB4500::CUST_ExitTestMode(void)
 
 uint8_t STUSB4500::CUST_WriteSector(char SectorNum, unsigned char *SectorData)
 {
-  unsigned char Buffer[2];
+  uint8_t Buffer[1];
   
   //Write the 64-bit data to be written in the sector
   if ( I2C_Write_USB_PD(RW_BUFFER,SectorData,8) != 0 )return -1;

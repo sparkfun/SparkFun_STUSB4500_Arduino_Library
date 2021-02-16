@@ -364,6 +364,11 @@ class STUSB4500 {
   */
   void setReqSrcCurrent(uint8_t value);
 
+  /*
+  	Performs a soft reset to force the STUSB4500 to re-negotiate with the source.
+  */
+  void softReset( void );
+
   
   private:
   
@@ -375,6 +380,8 @@ class STUSB4500 {
   //Variables
   uint8_t _deviceAddress;
   
+  uint32_t readPDO(uint8_t pdo_numb);
+  void writePDO(uint8_t pdo_numb, uint32_t pdoData);
   uint8_t CUST_EnterWriteMode(unsigned char ErasedSector);
   uint8_t CUST_ExitTestMode(void);
   uint8_t CUST_WriteSector(char SectorNum, unsigned char *SectorData);

@@ -452,8 +452,13 @@ uint32_t STUSB4500::readPDO(uint8_t pdo_numb)
   //PDO1:0x85, PDO2:0x89, PDO3:0x8D
   I2C_Read_USB_PD(0x85 + ((pdo_numb-1)*4), Buffer, 4);
 
-  //Replace voltage from bits 10:19 with new voltage
-  pdoData = (Buffer[3]<<24) + (Buffer[2]<<16) + (Buffer[1]<<8) + Buffer[0];
+  //Combine the 4 buffer bytes into one 32-bit integer
+  for(uint8_t i=0; i<4; i++)
+  {
+    uint32_t tempData = Buffer[i];
+    tempData = (tempData<<(i*8));
+    pdoData += tempData;
+  }
 
   return pdoData;
 }

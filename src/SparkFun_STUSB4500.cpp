@@ -104,7 +104,7 @@ void STUSB4500::read(void)
   else                       setCurrent(1,currentValue * 0.50 - 2.50);
 
   //PDO2
-  setVoltage(2,sector[4][1]*0.2);
+  setVoltage(2,((sector[4][1]<<2) + (sector[4][0]>>6))/20.0);
 
   currentValue = (sector[3][4]&0x0F);
   if(currentValue == 0)      setCurrent(2,0);
@@ -112,7 +112,7 @@ void STUSB4500::read(void)
   else                       setCurrent(2,currentValue * 0.50 - 2.50);
 
   //PDO3
-  setVoltage(3,(((sector[4][3]&0x03)<<8) + sector[4][2])*0.05);
+  setVoltage(3,(((sector[4][3]&0x03)<<8) + sector[4][2])/20.0);
 
   currentValue = (sector[3][5]&0xF0) >> 4;
   if(currentValue == 0)      setCurrent(3,0);
@@ -147,7 +147,7 @@ void STUSB4500::write(uint8_t defaultVals)
 
 
   	  digitalVoltage = (pdoData>>10)&0x3FF; //The voltage is bits 10:19 of the 32-bit PDO register
-  	  voltage[i] = digitalVoltage*0.05; //Voltage has 50mV resolution
+  	  voltage[i] = digitalVoltage/20.0; //Voltage has 50mV resolution
 
   	  // Make sure the minimum voltage is between 5-20V
   	  if(voltage[i] < 5.0)       voltage[i] = 5.0;
@@ -169,13 +169,19 @@ void STUSB4500::write(uint8_t defaultVals)
     // The voltage for PDO1 is 5V and cannot be changed
 
     // PDO2
-    sector[4][1] = voltage[1] / 0.2; //load Voltage (sector 4, byte 1, bits 0:7)
+	// Load voltage (10-bit)
+	// -bit 9:2 - sector 4, byte 1, bits 0:7
+	// -bit 0:1 - sector 4, byte 0, bits 6:7	
+	digitalVoltage = voltage[1] * 20;          //convert votlage to 10-bit value
+	sector[4][0] &= 0x3F;                        //clear bits 6:7
+	sector[4][0] |= ((digitalVoltage&0x03)<<6);  //load voltage bits 0:1 into bits 6:7
+	sector[4][1] = (digitalVoltage>>2);          //load bits 2:9
 
     // PDO3
     // Load voltage (10-bit)
     // -bit 8:9 - sector 4, byte 3, bits 0:1
     // -bit 0:7 - sector 4, byte 2, bits 0:7
-    digitalVoltage = voltage[2] / 0.05;   //convert voltage to 10-bit value
+    digitalVoltage = voltage[2] * 20;   //convert voltage to 10-bit value
     sector[4][2] = 0xFF & digitalVoltage; //load bits 0:7
     sector[4][3] &= 0xFC;                 //clear bits 0:1
     sector[4][3] |= (digitalVoltage>>8);  //load bits 8:9
@@ -226,7 +232,7 @@ float STUSB4500::getVoltage(uint8_t pdo_numb)
   uint32_t pdoData = readPDO(pdo_numb);
 
   pdoData = (pdoData>>10)&0x3FF;
-  voltage = pdoData * 0.05;
+  voltage = pdoData / 20.0;
 
   return voltage;
 }
@@ -327,7 +333,8 @@ void STUSB4500::setVoltage(uint8_t pdo_numb, float voltage)
 
   // Load voltage to volatile PDO memory (PDO1 needs to remain at 5V)
   if(pdo_numb == 1) voltage = 5;
-  voltage /= 0.05;
+  
+  voltage *= 20; 
 
   //Replace voltage from bits 10:19 with new voltage
   uint32_t pdoData = readPDO(pdo_numb);
